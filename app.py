@@ -5,6 +5,14 @@ from dotenv import load_dotenv
 
 from PyPDF2 import PdfReader
 from langchain.text_splitter import CharacterTextSplitter
+#from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores.faiss import FAISS
+
+#from langchain_openai import OpenAI
+from langchain_openai import ChatOpenAI
+from langchain.memory import ConversationBufferMemory
+from langchain.chains import ConversationalRetrievalChain
 
 
 
@@ -17,7 +25,6 @@ def get_pdf_text(pdf_docs):
         #Now, we will read each page and add it to the text
         for page in pdf_reader.pages:
             text += page.extract_text()
-
     return text
 
 def get_text_chunks(text):
@@ -26,11 +33,32 @@ def get_text_chunks(text):
         separator="\n",
         chunk_size=1000,
         chunk_overlap=200,
-        length_function=len
+        length_function=len 
     )
     chunks = text_splitter.split_text(text)
     return chunks
 
+def get_vectorstore(text_chunks):
+    embeddings = OpenAIEmbeddings()
+    #embeddings = HugginFaceInstructEmbeddings(model_name="hkunlp/instructor-xl")
+    vectorstore = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
+    return vectorstore
+
+
+
+def get_conversation_chain(vectorstore):
+    llm = ChatOpenAI()
+    #here, the first step is to instantiate memory
+    #we need to import it from langchain which is called conversational buffer memory
+    memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
+    retriever = vectorstore.as_retriever()
+    conversation_chain = ConversationalRetrievalChain.from_llm(
+        llm=llm,
+        retriever=retriever,
+        memory=memory
+
+    )
+    return conversation_chain
 
 
 
@@ -38,6 +66,10 @@ def get_text_chunks(text):
 def main():
     load_dotenv()
     st.set_page_config(page_title="Chat with multiple PDFs", page_icon=":books:")
+
+    #this variable of conversation is created in the session state
+    if "conversation" not in st.session_state:
+        st.session_state.conversation = None    
 
     st.header("Chat with multiple PDFs :books:")
 
@@ -65,6 +97,10 @@ def main():
                 st.write(text_chunks)
 
                 #Step 3: Create the vector store with the Embeddings
+                vectorstore = get_vectorstore(text_chunks)
+
+                #Step 4: Create Conversational Chain
+                st.session_state.conversation = get_conversation_chain(vectorstore)
 
 
 if __name__ == '__main__':
