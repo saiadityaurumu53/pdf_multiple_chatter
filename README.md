@@ -1,10 +1,11 @@
 Aim: The main aim of this project is to create a Multiple PDF chatter application using the RAG (Retriever Argumented Generation) method using the Large Language models.
 
 Tech stack:
-    1. LangChain
-    2. OpenAI Embeddings
-    3. OpenAI Large Language Model
-    4. Streamlit - for the UI
+ 1. LanChain
+ 2. OpenAI Embeddings
+ 3. OpenAI Large Language Model 
+ 4. Streamlit - for the UI 
+ 5. FAISS vector store (FAcebook AI Similarity Search) 
 
 The main 
 The below is the mentioned pdf chatbot 
