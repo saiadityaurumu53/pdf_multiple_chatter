@@ -14,6 +14,8 @@ from langchain_openai import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 
+from html_templates import css
+
 
 
 def get_pdf_text(pdf_docs):
@@ -61,20 +63,45 @@ def get_conversation_chain(vectorstore):
     return conversation_chain
 
 
+def handle_user_question(user_question):
+    response = st.session_state.conversation({'question': user_question})
+    #st.write(response)
+    #we are going to take this object right here and we are going to format it for the template which we will have 
+    st.session_state.chat_history = response['chat_history']
+
+    for i, message in enumerate(st.session_state.chat_history):
+        if (i%2 == 0):
+            #here we will write the user input template
+            message1 = st.chat_message("user")
+            message1.write(message.content)
+        else:
+            #here we will display the bot template
+            message2 = st.chat_message("assistant")
+            message2.write(message.content)
 
 
 def main():
     load_dotenv()
     st.set_page_config(page_title="Chat with multiple PDFs", page_icon=":books:")
+    st.write(css, unsafe_allow_html=True)
 
     #this variable of conversation is created in the session state
     if "conversation" not in st.session_state:
-        st.session_state.conversation = None    
+        st.session_state.conversation = None   
+
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = None 
 
     st.header("Chat with multiple PDFs :books:")
 
     #below the header we want the user to have the user to type inputs so we will 
-    st.text_input("Ask a question about your documents:")
+    user_question = st.text_input("Ask a question about your documents:")
+
+    if user_question:
+        handle_user_question(user_question)
+
+    
+
 
     #now we also want a side bar where the user is going to upload the documents
     #Also if we want to keep or put things inside it then we are gonna use the with keyword
